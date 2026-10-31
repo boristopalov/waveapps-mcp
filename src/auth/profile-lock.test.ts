@@ -23,6 +23,12 @@ describe('withProfileLock', () => {
     expect(existsSync(lockPath)).toBe(false);
   });
 
+  it('creates the missing config dir on a first-ever sign-in', async () => {
+    const nestedLock = join(tmp, 'not-yet-created', 'sign-in.lock');
+    await expect(withProfileLock(async () => existsSync(nestedLock), { lockPath: nestedLock })).resolves.toBe(true);
+    expect(existsSync(nestedLock)).toBe(false);
+  });
+
   it('releases the lock when fn throws', async () => {
     await expect(withProfileLock(async () => { throw new Error('boom'); }, { lockPath })).rejects.toThrow('boom');
     expect(existsSync(lockPath)).toBe(false);

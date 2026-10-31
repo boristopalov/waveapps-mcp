@@ -1,5 +1,5 @@
 import { mkdirSync, rmSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { configDir } from './credentials.js';
 
 export interface ProfileLockOptions {
@@ -25,6 +25,10 @@ export async function withProfileLock<T>(fn: () => Promise<T>, opts: ProfileLock
   const staleMs = opts.staleMs ?? 10 * 60_000;
   const pollMs = opts.pollMs ?? 1_000;
   const deadline = Date.now() + waitMs;
+
+  // The lock itself must be created non-recursively (that's what makes it atomic), but its
+  // parent (the config dir) doesn't exist yet on a first-ever sign-in.
+  mkdirSync(dirname(lockPath), { recursive: true, mode: 0o700 });
 
   for (;;) {
     try {
